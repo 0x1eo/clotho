@@ -1,0 +1,134 @@
+# ISO 27002:2022 Baseline Configuration
+# Deviation from this baseline is drift.
+
+meta:
+  version: "1.0"
+  standard: "ISO 27002:2022"
+  organization: "XXX"
+  last_reviewed: "2026-01-10"
+  auditor: "Clotho Engine v1.0"
+
+# Remote nodes under audit
+nodes:
+  athena:
+    host: "athena.local"
+    port: 22
+    user: "auditor"
+    description: "Primary application server"
+
+  borg:
+    host: "borg.local"
+    port: 22
+    user: "auditor"
+    description: "Message broker / API gateway"
+
+  charon:
+    host: "charon.local"
+    port: 22
+    user: "auditor"
+    description: "Perimeter firewall / IDS"
+
+# ISO 27002:2022 Control Mappings
+controls:
+  # 5.15 - Access Control
+  "5.15":
+    title: "Access Control"
+    description: "Rules to control physical and logical access to information"
+    collectors:
+      users:
+        allowed:
+          - root
+          - auditor
+          - sysadmin
+          - www-data
+        forbidden:
+          - guest
+          - test
+          - temp
+
+  # 5.17 - Authentication Information
+  "5.17":
+    title: "Authentication Information"
+    description: "Allocation and management of authentication information"
+    collectors:
+      files:
+        - path: "/etc/ssh/sshd_config"
+          description: "SSH daemon configuration"
+          sha256: null  # Populate after initial baseline capture
+        - path: "/etc/pam.d/common-auth"
+          description: "PAM authentication configuration"
+          sha256: null
+
+  # 8.9 - Configuration Management
+  "8.9":
+    title: "Configuration Management"
+    description: "Configurations of hardware, software, services and networks"
+    collectors:
+      files:
+        - path: "/etc/passwd"
+          description: "User account database"
+          sha256: null
+        - path: "/etc/group"
+          description: "Group definitions"
+          sha256: null
+        - path: "/etc/sudoers"
+          description: "Sudo privileges"
+          sha256: null
+
+  # 8.20 - Network Security
+  "8.20":
+    title: "Network Security"
+    description: "Networks and network devices shall be secured and protected"
+    collectors:
+      ports:
+        allowed:
+          - 22    # SSH
+          - 80    # HTTP (if web server)
+          - 443   # HTTPS
+        forbidden:
+          - 21    # FTP
+          - 23    # Telnet
+          - 25    # SMTP (unless mail server)
+          - 3389  # RDP
+          - 5900  # VNC
+
+  # 8.21 - Security of Network Services
+  "8.21":
+    title: "Security of Network Services"
+    description: "Security mechanisms and service levels for network services"
+    collectors:
+      processes:
+        allowed:
+          - sshd
+          - systemd
+          - cron
+          - rsyslogd
+        forbidden:
+          - telnetd
+          - rshd
+          - rlogind
+          - fingerd
+          - tftpd
+
+  # 8.31 - Separation of Development, Test and Production
+  "8.31":
+    title: "Separation of Environments"
+    description: "Development, testing and production environments shall be separated"
+    collectors:
+      users:
+        forbidden:
+          - developer
+          - devops
+          - staging
+      processes:
+        forbidden:
+          - node  # Dev servers
+          - flask  # Dev WSGI
+          - webpack
+
+# Global audit parameters
+audit:
+  timeout_seconds: 30
+  parallel_nodes: true
+  fail_on_first_delta: false
+  evidence_retention_days: 90

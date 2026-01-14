@@ -31,6 +31,33 @@ python clotho.py --local
 
 # use specific SSH key
 python clotho.py --key-file ~/.ssh/id_ed25519
+
+# dry-run to see planned checks without execution
+python clotho.py --dry-run
+
+# run specific controls only
+python clotho.py --control 8.20,5.15
+
+# run all 8.x controls (range support)
+python clotho.py --control 8:9
+
+# exclude specific controls
+python clotho.py --exclude-control 8.31
+
+# show file diffs when hash mismatches detected
+python clotho.py --show-diffs
+
+# compare with previous audit
+python clotho.py --compare-with previous
+
+# compare with specific audit (use node filtering)
+python clotho.py --node athena --compare-with audit_20260114_120000
+
+# show compliance trends
+python clotho.py --trend --days 30
+
+# specify output formats (default: html,pdf,json)
+python clotho.py --format html,json
 ```
 
 ## Baseline

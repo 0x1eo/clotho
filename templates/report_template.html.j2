@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clotho Audit Report - {{ organization|e }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #1a1a2e;
+            background: #f0f0f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d3436 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            color: #1a1a2e;
+            margin: 2rem 0 1rem;
+            border-bottom: 2px solid #1a1a2e;
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: #4a4a6a;
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .meta-info div {
+            background: rgba(255,255,255,0.1);
+            padding: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .status-pass {
+            background: #2d6a4f;
+            color: white;
+        }
+
+        .status-fail {
+            background: #9d0208;
+            color: white;
+        }
+
+        .summary-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .summary-item {
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .summary-item.total {
+            background: #f0f0f5;
+        }
+
+        .summary-item.passed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .summary-item.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .summary-item .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .summary-item .label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .controls-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .controls-table th,
+        .controls-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .controls-table th {
+            background: #1a1a2e;
+            color: white;
+            font-weight: 600;
+        }
+
+        .controls-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .control-id {
+            font-family: monospace;
+            background: #f0f0f5;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .finding {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #4a4a6a;
+        }
+
+        .finding.passed {
+            border-left-color: #2d6a4f;
+        }
+
+        .finding.failed {
+            border-left-color: #9d0208;
+        }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .finding-meta {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .finding-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .evidence-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            border-left: 3px solid #4a4a6a;
+        }
+
+        .evidence-box.forbidden {
+            border-left-color: #9d0208;
+            background: #fff5f5;
+        }
+
+        .evidence-box.unexpected {
+            border-left-color: #e85d04;
+            background: #fffaf0;
+        }
+
+        .evidence-box.allowed {
+            border-left-color: #2d6a4f;
+            background: #f0fff4;
+        }
+
+        .evidence-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1a1a2e;
+        }
+
+        .evidence-list {
+            list-style: none;
+            margin: 0;
+        }
+
+        .evidence-list li {
+            padding: 0.25rem 0;
+        }
+
+        .evidence-list code {
+            background: #e0e0e0;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .command-box {
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        .diff-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+        }
+
+        .diff-box pre {
+            margin: 0;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .filter-controls {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #1a1a2e;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f0f0f5;
+        }
+
+        .filter-btn.active {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .finding-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .finding-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Compliance Audit Report</h1>
+            <p class="subtitle">{{ standard|e }}</p>
+            <div style="margin: 1.5rem 0;">
+                {% if summary.entropy_detected %}
+                <span class="status-badge status-fail">⚠️ ENTROPY DETECTED</span>
+                {% else %}
+                <span class="status-badge status-pass">✓ ORDERED STATE CONFIRMED</span>
+                {% endif %}
+            </div>
+            <div class="meta-info">
+                <div><strong>Organization:</strong><br>{{ organization|e }}</div>
+                <div><strong>Generated:</strong><br>{{ generated_at|e }}</div>
+                <div><strong>Nodes Audited:</strong><br>{{ report.nodes|join(', ')|e }}</div>
+                <div><strong>Baseline Version:</strong><br>{{ report.baseline_version|e }}</div>
+            </div>
+        </header>
+
+        <section>
+            <h2>Executive Summary</h2>
+            <div class="summary-box">
+                <div class="summary-grid">
+                    <div class="summary-item total">
+                        <span class="number">{{ summary.total_checks }}</span>
+                        <span class="label">Total Checks</span>
+                    </div>
+                    <div class="summary-item passed">
+                        <span class="number">{{ summary.passed }}</span>
+                        <span class="label">Passed</span>
+                    </div>
+                    <div class="summary-item failed">
+                        <span class="number">{{ summary.failed }}</span>
+                        <span class="label">Failed</span>
+                    </div>
+                    <div class="summary-item total">
+                        <span class="number">{{ "%.1f"|format(summary.pass_rate) }}%</span>
+                        <span class="label">Pass Rate</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Control Summary</h2>
+            <table class="controls-table">
+                <thead>
+                    <tr>
+                        <th>Control ID</th>
+                        <th>Control Title</th>
+                        <th>Passed</th>
+                        <th>Failed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ctrl_id, ctrl in summary.by_control.items() %}
+                    <tr>
+                        <td><span class="control-id">{{ ctrl_id|e }}</span></td>
+                        <td>{{ ctrl.title|e }}</td>
+                        <td style="color: #2d6a4f; font-weight: bold;">{{ ctrl.passed }}</td>
+                        <td style="color: #9d0208; font-weight: bold;">{{ ctrl.failed }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Detailed Findings</h2>
+            <div class="filter-controls">
+                <button class="filter-btn active" onclick="filterFindings('all')">All</button>
+                <button class="filter-btn" onclick="filterFindings('passed')">Passed Only</button>
+                <button class="filter-btn" onclick="filterFindings('failed')">Failed Only</button>
+            </div>
+
+            {% for finding in findings %}
+            <div class="finding {{ 'passed' if finding.passed else 'failed' }}" data-status="{{ 'passed' if finding.passed else 'failed' }}">
+                <div class="finding-header">
+                    <h3>
+                        <span class="control-id">[{{ finding.control_id|e }}]</span>
+                        {{ finding.control_title|e }}
+                    </h3>
+                    <span class="status-badge {{ 'status-pass' if finding.passed else 'status-fail' }}">
+                        {{ '✓ PASS' if finding.passed else '✗ FAIL' }}
+                    </span>
+                </div>
+
+                <div class="finding-meta">
+                    <span><strong>Node:</strong> {{ finding.node|e }}</span>
+                    <span><strong>Collector:</strong> {{ finding.collector_type|e }}</span>
+                    <span><strong>Timestamp:</strong> {{ finding.timestamp|e }}</span>
+                </div>
+
+                <div class="evidence-box">
+                    <div class="evidence-title">Command Executed</div>
+                    <div class="command-box">{{ finding.command|e }}</div>
+                </div>
+
+                {% if finding.evidence.get('forbidden_found') %}
+                <div class="evidence-box forbidden">
+                    <div class="evidence-title">⚠️ Forbidden Items Detected</div>
+                    <ul class="evidence-list">
+                        {% for item in finding.evidence.forbidden_found %}
+                        <li><code>{{ item|e }}</code></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if finding.evidence.get('unexpected') %}
+                <div class="evidence-box unexpected">
+                    <div class="evidence-title">⚡ Unexpected Items (Not in Baseline)</div>
+                    <ul class="evidence-list">
+                        {% for item in finding.evidence.unexpected %}
+                        <li><code>{{ item|e }}</code></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if finding.evidence.get('mismatches') %}
+                <div class="evidence-box forbidden">
+                    <div class="evidence-title">📝 Configuration Drift Detected</div>
+                    {% for m in finding.evidence.mismatches %}
+                    <div style="margin: 0.5rem 0;">
+                        <strong>File:</strong> <code>{{ m.path|e }}</code><br>
+                        <strong>Expected:</strong> <code>{{ m.expected[:16]|e }}...</code><br>
+                        <strong>Actual:</strong> <code>{{ m.actual[:16]|e }}...</code>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if finding.evidence.get('allowed_found') %}
+                <div class="evidence-box allowed">
+                    <div class="evidence-title">✓ Allowed Items Found</div>
+                    <ul class="evidence-list">
+                        {% for item in finding.evidence.allowed_found %}
+                        <li><code>{{ item|e }}</code></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% for file in finding.evidence.get('details', []) %}
+                {% if file.get('diff') %}
+                <div class="diff-box">
+                    <div class="evidence-title">📄 Diff: {{ file.path|e }}</div>
+                    <pre>{{ file.diff|e }}</pre>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </section>
+
+        <footer style="text-align: center; margin-top: 3rem; padding: 2rem; color: #666; border-top: 1px solid #e0e0e0;">
+            <p>Generated by <strong>Clotho Engine v1.0</strong></p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">{{ generated_at|e }}</p>
+        </footer>
+    </div>
+
+    <script>
+        function filterFindings(status) {
+            const findings = document.querySelectorAll('.finding');
+            const buttons = document.querySelectorAll('.filter-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            findings.forEach(finding => {
+                if (status === 'all') {
+                    finding.style.display = 'block';
+                } else if (finding.dataset.status === status) {
+                    finding.style.display = 'block';
+                } else {
+                    finding.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

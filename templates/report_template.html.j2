@@ -479,7 +479,7 @@
                 {% endif %}
 
                 {% for file in finding.evidence.get('details', []) %}
-                {% if file.get('diff') %}
+                {% if file is mapping and file.get('diff') %}
                 <div class="diff-box">
                     <div class="evidence-title">📄 Diff: {{ file.path|e }}</div>
                     <pre>{{ file.diff|e }}</pre>
